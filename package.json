@@ -1,9 +1,11 @@
 {
   "dependencies": {
-    "async": "^1.5.2",
-    "chai": "^3.5.0",
+    "body-parser": "^1.15.0",
     "express": "^4.13.4",
-    "mocha": "^2.4.5",
+    "nunjucks": "^2.3.0",
     "onoff": "^1.0.4"
+  },
+  "devDependencies": {
+    "nodemon": "^1.8.1"
   }
 }

@@ -1,0 +1,45 @@
+<html>
+  <head>
+    <title>Halva</title>
+    <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
+    <style>
+      body {
+        margin: 16px;
+        text-align: center;
+      }
+
+      h1 {
+        margin: 0;
+      }
+
+      p {
+        margin: 0;
+      }
+
+      form {
+        width: 100%;
+      }
+
+      button {
+        width:  128px;
+        height: 128px;
+        margin: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Open, Halva!</h1>
+
+    <form action="/toggle" method="POST">
+      {% for door in doors %}
+        <button name="toggle" value="{{door.name}}" type="submit">{{ door.name }}</button>
+      {% endfor %}
+    </form>
+    <p>Better than sesames.</p>
+    <ul>
+    {% for message in messages %}
+      <li>{{ message.text }}</li>
+    {% endfor %}
+    </ul>
+  </body>
+</html>

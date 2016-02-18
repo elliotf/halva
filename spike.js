@@ -2,135 +2,105 @@
 
 'use strict';
 
-var async = require('async');
-var Gpio  = require('onoff').Gpio;
+var express    = require('express');
+var nunjucks   = require('nunjucks');
+var Gpio       = require('onoff').Gpio;
+var bodyParser = require('body-parser');
 
-var pin_numbers = [2,3,4,17];
-var pin_on_time = 250;
-var pins        = pin_numbers.map(function(pin_number, index) {
-  return new Gpio(pin_number, 'high');
-});
+var config = {
+  doors: [
+    {
+      name:     'left',
+      gpio_pin: 2,
+    },
+    {
+      name:     'right',
+      gpio_pin: 3,
+    },
+  ],
+  pin_on_time: 250,
+};
 
-async.eachSeries(
-  pins,
-  function(pin, done) {
-    console.log("Turning pin", pin.gpio, "on");
-    pin.write(0, function(err) {
-      if (err) {
-        return done(err);
-      }
+function GarageDoor(attrs) {
+  this.gpio_pin = attrs.gpio_pin;
+  this.name     = attrs.name;
+  this.gpio     = new Gpio(this.gpio_pin, 'high');
+}
 
-      setTimeout(function() {
-        console.log("Turning pin", pin.gpio, "off");
-        pin.write(1, function(err) {
-          if (err) {
-            return done(err);
-          }
-
-          setTimeout(function() {
-            return done();
-    }, pin_on_time);
-  });
-      }, pin_on_time);
-    });
-  },
-  function(err) {
+GarageDoor.prototype.toggle = function(done) {
+  var self = this;
+  self.gpio.write(0, function(err) {
     if (err) {
-      console.log('ERR:', err);
+      return done(err);
     }
-    pins.forEach(function(pin) {
-      console.log("Unexporting");
-      pin.unexport();
-    });
-
-    //process.exit();
-  }
-);
-
-/*
-var gpio = require('rpi-gpio');
-var gpio_pins   = [3,5,7,11];
-//var gpio_pins   = [3,5];
-var pin_on_time = 125;
-async.eachSeries(gpio_pins, function(pin_number, done) {
-  gpio.setup(pin_number, gpio.DIR_OUT, gpio.EDGE_NONE, function(err) {
-    if (err) {
-      console.log("err when opening pin", pin_number, ":", err);
-      return done;
-    }
-
-    console.log('set up pin', pin_number);
 
     setTimeout(function() {
-      gpio.write(pin_number, false, function(err) {
+      self.gpio.write(1, function(err) {
         if (err) {
-          console.log("err when turning on pin", pin_number, ":", err);
-          return done;
+          return done(err);
         }
 
-        console.log('turned pin', pin_number, 'on');
-
-        setTimeout(function() {
-          gpio.write(pin_number, true, function(err) {
-            if (err) {
-              console.log("err when turning off pin", pin_number, ":", err);
-              return done;
-            }
-
-            console.log('turned pin', pin_number, 'off');
-      setTimeout(function() {
-              return done();
-      }, pin_on_time);
-          });
-        }, pin_on_time);
+        return done();
       });
-    }, pin_on_time);
+    }, config.pin_on_time);
   });
-}, function(err) {
-  console.log("final err:", err);
-  process.exit(1);
-});
-*/
+};
 
-/*
-var gpio = require('pi-gpio');
-var gpio_pins = [7];
-async.eachSeries(gpio_pins, function(pin_number, done) {
-  gpio.open(pin_number, "input", function(err) {
+var doors = config.doors.map(function(attrs) {
+  return new GarageDoor(attrs);
+});
+
+var doors_by_name = {};
+doors.forEach(function(door) {
+  doors_by_name[door.name] = door;
+});
+
+var app = express();
+
+app.use(bodyParser.urlencoded({ extended: true }));
+
+nunjucks.configure('views', {
+  autoescape: true,
+  express:    app,
+});
+
+app.use(function(req, res, next) {
+  res.locals.doors    = doors;
+  // read off session flash storage, tuck into res.locals
+  res.locals.messages = [];
+
+  return next();
+});
+
+app.get('/', function(req, res, next) {
+  return res.render('index.html');
+});
+
+app.post('/toggle', function(req, res, next) {
+  var to_toggle = req.body.toggle;
+  if (!to_toggle || !doors_by_name[to_toggle]) {
+    res.locals.messages.push({
+      text: 'Could not toggle ' + to_toggle,
+    });
+
+    return res.render('index.html');
+  }
+  var door = doors_by_name[to_toggle];
+
+  door.toggle(function(err) {
     if (err) {
-      console.log("err when opening pin", pin_number, ":", err);
-      return done;
+      return next(err);
     }
 
-    gpio.write(pin_number, 1, function(err) {
-      if (err) {
-        console.log("err when turning on pin", pin_number, ":", err);
-        return done;
-      }
-
-      console.log('turned pin', pin_number, 'on');
-
-      gpio.write(pin_number, 0, function(err) {
-        if (err) {
-          console.log("err when turning off pin", pin_number, ":", err);
-          return done;
-        }
-
-        console.log('turned pin', pin_number, 'off');
-
-        gpio.close(pin_number, function(err) {
-          if (err) {
-            console.log("err when closing pin", pin_number, ":", err);
-            return done;
-          }
-
-          return done();
-        });
-      });
+    // tuck into session flash storage
+    res.locals.messages.push({
+      text: 'toggled ' + to_toggle + '!',
     });
+
+    return res.redirect('/');
   });
-}, function(err) {
-  console.log("final err:", err);
-  process.exit(1);
 });
-*/
+
+app.listen('3000', '127.0.0.1', function(err) {
+  console.log('Listening on port 3000');
+});
