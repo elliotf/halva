@@ -14,12 +14,12 @@ var config = {
     {
       name:       'Hers',
       button_pin: 2,
-      sensor_pin: 27,
+      sensor_pin: 17,
     },
     {
       name:       'His',
       button_pin: 3,
-      sensor_pin: 17,
+      sensor_pin: 27,
     },
   ],
   pin_on_time: 250,
