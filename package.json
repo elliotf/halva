@@ -1,7 +1,9 @@
 {
   "dependencies": {
+    "async": "^2.1.2",
     "body-parser": "^1.15.0",
     "express": "^4.13.4",
+    "lodash": "^4.17.2",
     "nunjucks": "^2.3.0",
     "onoff": "^1.0.4"
   },

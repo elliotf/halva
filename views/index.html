@@ -1,7 +1,7 @@
 <html>
   <head>
     <title>Halva</title>
-    <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
+    <meta content='width=device-width, initial-scale=1.0, user-scalable=1' name='viewport' />
     <style>
       body {
         margin: 16px;
@@ -32,9 +32,10 @@
 
     <form action="/toggle" method="POST">
       {% for door in doors %}
-        <button name="toggle" value="{{door.name}}" type="submit">{{ door.name }}</button>
+        <button name="toggle" value="{{door.name}}" type="submit">{{ door.name }} ({{ door.status }})</button>
       {% endfor %}
     </form>
+    <img width="100%" style="-webkit-user-select: none" src="/video.mpjpeg">
     <p>Better than sesames.</p>
     <ul>
     {% for message in messages %}

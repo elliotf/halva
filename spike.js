@@ -2,6 +2,8 @@
 
 'use strict';
 
+var _          = require('lodash');
+var async      = require('async');
 var express    = require('express');
 var nunjucks   = require('nunjucks');
 var Gpio       = require('onoff').Gpio;
@@ -10,32 +12,45 @@ var bodyParser = require('body-parser');
 var config = {
   doors: [
     {
-      name:     'left',
-      gpio_pin: 2,
+      name:       'Hers',
+      button_pin: 2,
+      sensor_pin: 27,
     },
     {
-      name:     'right',
-      gpio_pin: 3,
+      name:       'His',
+      button_pin: 3,
+      sensor_pin: 17,
     },
   ],
   pin_on_time: 250,
 };
 
 function GarageDoor(attrs) {
-  this.gpio_pin = attrs.gpio_pin;
   this.name     = attrs.name;
-  this.gpio     = new Gpio(this.gpio_pin, 'high');
+  this.button   = new Gpio(attrs.button_pin, 'high');
+  this.sensor   = new Gpio(attrs.sensor_pin, 'in', 'both');
+  this.status   = '';
+  var self      = this;
+
+  this.sensor.watch(_.debounce(function(err, value) {
+    console.log(self.name, ' event err,value', err, value);
+  }, 100));
+
+  setInterval(function() {
+    self.getStatus(function(err, value) {
+    });
+  }, 1*1000);
 }
 
 GarageDoor.prototype.toggle = function(done) {
   var self = this;
-  self.gpio.write(0, function(err) {
+  self.button.write(0, function(err) {
     if (err) {
       return done(err);
     }
 
     setTimeout(function() {
-      self.gpio.write(1, function(err) {
+      self.button.write(1, function(err) {
         if (err) {
           return done(err);
         }
@@ -43,6 +58,18 @@ GarageDoor.prototype.toggle = function(done) {
         return done();
       });
     }, config.pin_on_time);
+  });
+};
+
+GarageDoor.prototype.getStatus = function(done) {
+  var self = this;
+  self.sensor.read(function(err, value) {
+    if (err) {
+      return done(err);
+    }
+    self.status = (value) ? 'Closed' : 'Not Closed';
+
+    return done(null, value);
   });
 };
 
@@ -98,6 +125,18 @@ app.post('/toggle', function(req, res, next) {
     });
 
     return res.redirect('/');
+  });
+});
+
+app.get('/door/:door', function(req, res, next) {
+  var door = doors_by_name[to_toggle];
+
+  door.getStatus(function(err, status) {
+    if (err) {
+      return next(err);
+    }
+
+    return res.json({ status: status });
   });
 });
 
