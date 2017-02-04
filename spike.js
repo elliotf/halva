@@ -13,12 +13,16 @@ var Client     = require('node-xmpp-client');
 
 var to_notify = {};
 
+var minute        = 60*1000;
+var beat_interval = 15*minute;
+
 function Chat() {
   if (!config.chat.jid || !config.chat.password) {
     return;
   }
   var self        = this;
   self.configured = true;
+  self.last_beat  = Date.now();
   var c           = this.client = new Client(config.chat);
 
   self.client.connection.socket.setTimeout(0);
@@ -32,13 +36,9 @@ function Chat() {
 
   c.on('online', function() {
     c.send(new Client.Element('presence'));
-    var roster = new Client.Element('iq', {
-      id: 'roster_1',
-      type: 'get'
-    }).c('query', {
-      xmlns: 'jabber:iq:roster'
-    });
-    c.send(roster);
+    setInterval(function() {
+      self.heartbeat();
+    }, beat_interval);
   });
 
   c.on('stanza', function(stanza) {
@@ -52,14 +52,7 @@ function Chat() {
         c.emit('message', stanza);
       }
     } else if (stanza.is('iq')) {
-      stanza.getChildren('query').forEach(function(child) {
-        child.getChildren('item').forEach(function(item) {
-          console.log('jid', item.attrs.jid);
-          console.log('name', item.attrs.name);
-          to_notify[item.attrs.jid] = true;
-        });
-      });
-      console.log('to_notify', to_notify);
+      return self.handleRoster(stanza);
     } else {
       console.log('OTHER', JSON.stringify(stanza, null, '  '));
     }
@@ -69,6 +62,31 @@ function Chat() {
     console.log('err', err);
   });
 }
+
+Chat.prototype.getRoster = function() {
+  var roster = new Client.Element('iq', {
+    id: 'roster_1',
+    type: 'get'
+  }).c('query', {
+    xmlns: 'jabber:iq:roster'
+  });
+  this.client.send(roster);
+};
+
+Chat.prototype.handleRoster = function(stanza) {
+  this.last_beat = Date.now();
+
+  stanza.getChildren('query').forEach(function(child) {
+    child.getChildren('item').forEach(function(item) {
+      var already = to_notify[item.attrs.jid];
+      to_notify[item.attrs.jid] = true;
+
+      if (!already) {
+        console.log('will notify', item.attrs.jid);
+      }
+    });
+  });
+};
 
 Chat.prototype.notify = function(text) {
   var self = this;
@@ -88,6 +106,22 @@ Chat.prototype.notify = function(text) {
       .c('body').t(text);
     c.send(stanza);
   });
+};
+
+Chat.prototype.heartbeat = function() {
+  var now = Date.now();
+
+  var since_last = now - this.last_beat;
+  var seconds    = 1000;
+  var tolerance  = 60*seconds;
+  if (since_last > (beat_interval + tolerance)) {
+    console.log('heartbeat missed.  Exiting as a ghetto reconnect');
+    process.exit(0);
+  }
+
+  console.log('heartbeat:', new Date());
+
+  this.getRoster();
 };
 
 var chat = new Chat(config.chat);
@@ -248,5 +282,5 @@ app.get('/door/:door', function(req, res, next) {
 });
 
 app.listen('3000', '127.0.0.1', function(err) {
-  console.log('Listening on port 3000');
+  console.log('Listening on port 3000', new Date());
 });
