@@ -1,0 +1,42 @@
+<html>
+  <head>
+    <title>Halva</title>
+    <meta content='width=device-width, initial-scale=1.0, user-scalable=1' name='viewport' />
+    <style>
+      body {
+        margin: 16px 0;
+        text-align: center;
+      }
+
+      h1 {
+        margin: 0;
+      }
+
+      p {
+        margin: 0;
+      }
+
+      form {
+        width: 100%;
+      }
+
+      button {
+        width:  128px;
+        height: 96px;
+        margin: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Open, Halva!</h1>
+
+    <form action="/toggle" method="POST">
+      {{ range .Doors }}
+        <button name="toggle" value="{{ .Name}}" type="submit">{{ .Name }} ({{ .Status }})</button>
+      {{ end }}
+    </form>
+    <!-- <img width="100%" style="-webkit-user-select: none" src="/video.mpjpeg"> -->
+    <img width="100%" style="-webkit-user-select: none" src="http://halva.local/video.mpjpeg">
+    <p>Better than sesames.</p>
+  </body>
+</html>
