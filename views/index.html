@@ -39,7 +39,11 @@
     </form>
     <img width="100%" style="-webkit-user-select: none" src="/video.mpjpeg">
     <p>Last heartbeat: <span id="heartbeat">starting</span> ms</p>
-    <!--  Process uptime: {{ uptime }} -->
+    <!--
+      Process uptime: {{ uptime }}
+      Memory usage:
+{{ memory|safe }}
+    -->
     <script>
       function handleBeat(time) {
         var el = document.getElementById('heartbeat');

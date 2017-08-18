@@ -92,6 +92,7 @@ app.use(function(req, res, next) {
   // read off session flash storage, tuck into res.locals
   res.locals.messages = [];
   res.locals.uptime   = process.uptime();
+  res.locals.memory   = JSON.stringify(process.memoryUsage(), null, 2);
 
   res.set({
     'Cache-Control': 'no-cache, no-store, must-revalidate',
