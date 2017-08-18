@@ -37,11 +37,10 @@ doors.forEach(function(door) {
   doors_by_name[door.name] = door;
 });
 
-var snooze = 0;
+var alert_time = 0;
 function ensureClosed() {
   var now         = Date.now();
   var oldest_open = now;
-  var alert_after = config.left_open_alert.alert_after_open;
 
   doors.forEach(function(door) {
     if (!door.status || door.status === 'Closed') {
@@ -55,15 +54,20 @@ function ensureClosed() {
   });
 
   if (oldest_open === now) {
-    snooze = 0;
+    // everything is closed, reset state
+    alert_time = now + config.left_open_alert.alert_after_open;
   }
 
-  var open_for = now - oldest_open;
-  if (open_for < (alert_after + snooze)) {
+  if (now < alert_time) {
+    // nothing has been open long enough
     return;
   }
 
-  snooze = Math.min(snooze + open_for, config.left_open_alert.max_snooze);
+  var open_for = now - oldest_open;
+
+  // fibionacci snooze (10,20,30,50,80) with a limit
+  var snooze = Math.min(open_for, config.left_open_alert.max_snooze);
+  alert_time = alert_time + snooze;
 
   var minutes_open   = (open_for / minute).toFixed(0);
   var minutes_snooze = (snooze   / minute).toFixed(0);
