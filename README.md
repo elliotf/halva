@@ -8,3 +8,9 @@ The basic ingredients:
 * Sainsmart relay
 * powerline networking adapter because the ground is frozen and I can't run ethernet and I don't believe in wireless
 * some magnetic reed switches from the local surplus store
+
+## TODO
+* favicon
+* heartbeat to check if online
+* ajax-ify open buttons to improve responsiveness when opening both doors
+* relocate wifi access point

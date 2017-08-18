@@ -18,4 +18,19 @@ module.exports = {
     host:      "talk.google.com",
     port:      5222,
   },
+  mjpeg_url: 'http://your-url-here:port/path.cgi',
+  smtp: {
+    service: "Gmail",
+    //host:            "smtp.gmail.com",
+    //port:            465,
+    //secure:          true,
+    pool:            true,
+    maxConnections:  2,
+    auth:            {
+      user:  process.env.JID,
+      pass:  process.env.PASSWORD,
+    },
+  },
+  sms_recipients: [],
+  email_recipients: [],
 };

@@ -5,8 +5,6 @@
 var fs      = require('fs');
 var request = require('request');
 
-var url = 'http://halva.lan/video.mpjpeg';
-
 class Goat {
   constructor(uri, done) {
     this.uri  = uri;
@@ -15,6 +13,7 @@ class Goat {
     var megabyte  = 8*1000*1000;
     this.max_data = 2*megabyte;
     this.boundary = null;
+    this.headers  = false;
     this.data     = new Buffer('');
   }
 
@@ -25,13 +24,16 @@ class Goat {
   }
 
   start() {
-    var req = request(this.uri, (err, response, body) => {
+    if (this.response || this.req) {
+      // blow up
+    }
+    this.req = request(this.uri, (err, response, body) => {
       if (err) {
         return this.done(err);
       }
     });
 
-    req.on('response', (response) => {
+    this.req.on('response', (response) => {
       this.response = response;
 
       var content_type = response.headers['content-type'];
@@ -49,6 +51,7 @@ class Goat {
 
   finalize(err) {
     this.response.destroy();
+    this.headers = false;
     if (err) {
       return this.done(err);
     }
@@ -61,9 +64,11 @@ class Goat {
       return this.finalize(new Error(`something is awry.  We have read ${this.data.length} bytes without an image`));
     }
 
-    var header_index = chunk.indexOf('\r\n\r\n');
-    if (header_index !== -1 && 0 === this.data.length) {
-      this.data = chunk.slice(header_index + 4);
+    var header_boundary = '\r\n\r\n';
+    var header_index = chunk.indexOf(header_boundary);
+    if (header_index !== -1 && !this.headers) {
+      this.data    = chunk.slice(header_index + header_boundary.length);
+      this.headers = true;
       return;
     }
 
@@ -90,11 +95,4 @@ class Goat {
   }
 }
 
-Goat.getFrame(url, function(err, data) {
-  if (err) {
-    console.log('err', err);
-    return;
-  }
-
-  fs.writeFileSync('image.jpg', data);
-});
+module.exports = Goat;

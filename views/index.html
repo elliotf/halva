@@ -4,12 +4,8 @@
     <meta content='width=device-width, initial-scale=1.0, user-scalable=1' name='viewport' />
     <style>
       body {
-        margin: 16px 0;
-        text-align: center;
-      }
-
-      h1 {
         margin: 0;
+        text-align: center;
       }
 
       p {
@@ -17,30 +13,62 @@
       }
 
       form {
-        width: 100%;
+        width:  100%;
+        margin: 0;
       }
 
       button {
         width:  128px;
-        height: 96px;
+        height: 64px;
         margin: 16px;
       }
     </style>
   </head>
   <body>
-    <h1>Open, Halva!</h1>
-
+    {% if messages.length %}
+      <ul>
+      {% for message in messages %}
+        <li>{{ message.text }}</li>
+      {% endfor %}
+      </ul>
+    {% fi %}
     <form action="/toggle" method="POST">
       {% for door in doors %}
         <button name="toggle" value="{{door.name}}" type="submit">{{ door.name }} ({{ door.status }})</button>
       {% endfor %}
     </form>
     <img width="100%" style="-webkit-user-select: none" src="/video.mpjpeg">
-    <p>Better than sesames.</p>
-    <ul>
-    {% for message in messages %}
-      <li>{{ message.text }}</li>
-    {% endfor %}
-    </ul>
+    <p>Last heartbeat: <span id="heartbeat">starting</span> ms</p>
+    <!--  Process uptime: {{ uptime }} -->
+    <script>
+      function handleBeat(time) {
+        var el = document.getElementById('heartbeat');
+        el.innerHTML = time;
+      }
+      function heartbeat() {
+        var start   = Date.now();
+        var url     = '/heartbeat?ts=' + start;
+        var xhr     = new XMLHttpRequest();
+        var sleep   = 1000;
+        var timeout = sleep;
+        xhr.open('GET', url, true);
+        xhr.timeout = timeout;
+        xhr.addEventListener("load", function() {
+          var elapsed = Date.now() - start;
+          handleBeat(elapsed);
+          setTimeout(heartbeat, sleep);
+        });
+        xhr.addEventListener("error", function() {
+          handleBeat('error');
+          setTimeout(heartbeat, sleep);
+        });
+        xhr.addEventListener("timeout", function() {
+          handleBeat('timeout after ' + timeout);
+          setTimeout(heartbeat, 0);
+        });
+        xhr.send();
+      }
+      heartbeat();
+    </script>
   </body>
 </html>
