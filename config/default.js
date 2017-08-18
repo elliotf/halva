@@ -1,3 +1,5 @@
+var minute = 60*1000;
+
 module.exports = {
   doors: [
     {
@@ -11,6 +13,10 @@ module.exports = {
       sensor_pin: 17,
     },
   ],
+  left_open_alert: {
+    alert_after_open: 15*minute,
+    max_snooze:       15*minute,
+  },
   pin_on_time: 250,
   chat: {
     jid:       process.env.JID,

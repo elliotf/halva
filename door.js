@@ -10,6 +10,7 @@ function GarageDoor(attrs) {
   this.button   = new Gpio(attrs.button_pin, 'high');
   this.sensor   = new Gpio(attrs.sensor_pin, 'in', 'both');
   this.status   = '';
+  this.updated  = Date.now();
   var self      = this;
 
   this.sensor.watch(_.debounce(function(err, value) {
@@ -54,7 +55,8 @@ GarageDoor.prototype.setStatus = function(value) {
     return;
   }
 
-  self.status = new_state;
+  self.status  = new_state;
+  self.updated = Date.now();
 
   var state     = (value)
                 ? 'is now closed'

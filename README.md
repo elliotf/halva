@@ -10,7 +10,8 @@ The basic ingredients:
 * some magnetic reed switches from the local surplus store
 
 ## TODO
+* alert if garage door has been left open for N minutes
+  * every N minutes? exponentially?
+  * automatically close after some time (duration or time of day)?
 * favicon
-* heartbeat to check if online
 * ajax-ify open buttons to improve responsiveness when opening both doors
-* relocate wifi access point
