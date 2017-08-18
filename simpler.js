@@ -10,8 +10,6 @@ class Goat {
     this.uri  = uri;
     this.done = done;
 
-    this.started = Date.now();
-
     var megabyte  = 8*1000*1000;
     this.max_data = 2*megabyte;
     this.boundary = null;
@@ -57,9 +55,6 @@ class Goat {
     if (err) {
       return this.done(err);
     }
-
-    var elapsed = Date.now() - this.started;
-    console.log(`took ${elapsed} ms to get a frame`);
 
     return this.done(null, this.data);
   }
