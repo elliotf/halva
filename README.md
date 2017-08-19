@@ -8,10 +8,15 @@ The basic ingredients:
 * Sainsmart relay
 * powerline networking adapter because the ground is frozen and I can't run ethernet and I don't believe in wireless
 * some magnetic reed switches from the local surplus store
+* cheap usb webcam or raspberry pi camera
+
+Features so far:
+* multiple door support
+* opening/closing garage door from any browser
+* open/close status when it's too dark to see the webcam image
+* sms/email notification of door events (with picture from usb webcam)
+* automatic sms/email reminders if doors are left open
 
 ## TODO
-* alert if garage door has been left open for N minutes
-  * every N minutes? exponentially?
-  * automatically close after some time (duration or time of day)?
 * favicon
-* ajax-ify open buttons to improve responsiveness when opening both doors
+* ajax-ify open buttons to have door status auto-update
