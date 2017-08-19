@@ -14,7 +14,7 @@ module.exports = {
     },
   ],
   left_open_alert: {
-    alert_after_open: 10*minute,
+    alert_after_open: 5*minute,
     max_snooze:       30*minute,
   },
   pin_on_time: 250,
