@@ -6,6 +6,8 @@
       body {
         margin: 0;
         text-align: center;
+        background-color: 0;
+        color:  #ccc;
       }
 
       p {
@@ -21,6 +23,9 @@
         width:  128px;
         height: 64px;
         margin: 16px;
+        border: 0;
+        color:  #ccc;
+        background-color: #555;
       }
     </style>
   </head>
@@ -37,42 +42,46 @@
         <button name="toggle" value="{{door.name}}" type="submit">{{ door.name }} ({{ door.status }})</button>
       {% endfor %}
     </form>
-    <img width="100%" style="-webkit-user-select: none" src="/video.mpjpeg">
-    <p>Last heartbeat: <span id="heartbeat">starting</span> ms</p>
-    <!--
-      Process uptime: {{ uptime }}
-      Memory usage:
-{{ memory|safe }}
-    -->
-    <script>
-      function handleBeat(time) {
-        var el = document.getElementById('heartbeat');
-        el.innerHTML = time;
-      }
-      function heartbeat() {
-        var start   = Date.now();
-        var url     = '/heartbeat?ts=' + start;
-        var xhr     = new XMLHttpRequest();
-        var sleep   = 1000;
-        var timeout = sleep;
-        xhr.open('GET', url, true);
-        xhr.timeout = timeout;
-        xhr.addEventListener("load", function() {
-          var elapsed = Date.now() - start;
-          handleBeat(elapsed);
-          setTimeout(heartbeat, sleep);
-        });
-        xhr.addEventListener("error", function() {
-          handleBeat('error');
-          setTimeout(heartbeat, sleep);
-        });
-        xhr.addEventListener("timeout", function() {
-          handleBeat('timeout after ' + timeout);
-          setTimeout(heartbeat, 0);
-        });
-        xhr.send();
-      }
-      heartbeat();
-    </script>
+    {% if from_lan %}
+      <img width="100%" style="-webkit-user-select: none" src="/video.mpjpeg">
+      <p>Last heartbeat: <span id="heartbeat">starting</span> ms</p>
+      <!--
+        Process uptime: {{ uptime }}
+        Memory usage:
+  {{ memory|safe }}
+      -->
+      <script>
+        function handleBeat(time) {
+          var el = document.getElementById('heartbeat');
+          el.innerHTML = time;
+        }
+        function heartbeat() {
+          var start   = Date.now();
+          var url     = '/heartbeat?ts=' + start;
+          var xhr     = new XMLHttpRequest();
+          var sleep   = 1000;
+          var timeout = sleep;
+          xhr.open('GET', url, true);
+          xhr.timeout = timeout;
+          xhr.addEventListener("load", function() {
+            var elapsed = Date.now() - start;
+            handleBeat(elapsed);
+            setTimeout(heartbeat, sleep);
+          });
+          xhr.addEventListener("error", function() {
+            handleBeat('error');
+            setTimeout(heartbeat, sleep);
+          });
+          xhr.addEventListener("timeout", function() {
+            handleBeat('timeout after ' + timeout);
+            setTimeout(heartbeat, 0);
+          });
+          xhr.send();
+        }
+        heartbeat();
+      </script>
+    {% else %}
+      <img width="100%" style="-webkit-user-select: none" src="/recent_image.jpg">
+    {% endif %}
   </body>
 </html>

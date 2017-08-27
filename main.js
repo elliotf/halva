@@ -7,6 +7,8 @@ var bodyParser = require('body-parser');
 var config     = require('config');
 var express    = require('express');
 var fs         = require('fs');
+var os         = require('os');
+var ip_checker = require('./ip-subnet-check');
 var nunjucks   = require('nunjucks');
 var GarageDoor = require('./door');
 var mailer     = require('./mailer');
@@ -23,10 +25,7 @@ methods.forEach(function(meth) {
 });
 */
 
-var to_notify = {};
-
-var minute        = 60*1000;
-var beat_interval = 15*minute;
+var minute = 60*1000;
 
 var doors = config.doors.map(function(attrs) {
   return new GarageDoor(attrs);
@@ -65,7 +64,7 @@ function ensureClosed() {
 
   var open_for = now - oldest_open;
 
-  // fibionacci snooze (10,20,30,50,80) with a limit
+  // fibionacci snooze (10,10,20,30,50,80) with a limit
   var snooze = Math.min(open_for, config.left_open_alert.max_snooze);
   alert_time = alert_time + snooze;
 
@@ -87,12 +86,21 @@ nunjucks.configure('views', {
   express:    app,
 });
 
+app.get('/heartbeat', function(req, res, next) {
+  return res.json({});
+});
+
 app.use(function(req, res, next) {
   res.locals.doors    = doors;
-  // read off session flash storage, tuck into res.locals
   res.locals.messages = [];
   res.locals.uptime   = process.uptime();
   res.locals.memory   = JSON.stringify(process.memoryUsage(), null, 2);
+  res.locals.from_lan = false;
+  var client_ip = req.headers['x-real-ip'];
+
+  if (!client_ip || ip_checker.isLocalAddress(client_ip)) {
+    res.locals.from_lan = true;
+  }
 
   res.set({
     'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -105,10 +113,6 @@ app.use(function(req, res, next) {
 
 app.get('/', function(req, res, next) {
   return res.render('index.html');
-});
-
-app.get('/heartbeat', function(req, res, next) {
-  return res.json({});
 });
 
 app.post('/toggle', function(req, res, next) {
@@ -126,11 +130,6 @@ app.post('/toggle', function(req, res, next) {
     if (err) {
       return next(err);
     }
-
-    // tuck into session flash storage
-    res.locals.messages.push({
-      text: 'toggled ' + to_toggle + '!',
-    });
 
     return res.redirect('/');
   });
@@ -151,6 +150,17 @@ app.get('/door/:door', function(req, res, next) {
     var label = (status) ? 'CLOSED' : 'NOT_CLOSED';
 
     return res.json({ status: label });
+  });
+});
+
+app.get('/recent_image.jpg', function(req, res, next) {
+  mailer.getRecentImage(function(err, img_data) {
+    if (err) {
+      return next(err);
+    }
+
+    res.type('jpeg');
+    res.end(img_data, 'binary');
   });
 });
 

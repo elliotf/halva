@@ -18,12 +18,6 @@ module.exports = {
     max_snooze:       30*minute,
   },
   pin_on_time: 250,
-  chat: {
-    jid:       process.env.JID,
-    password:  process.env.PASSWORD,
-    host:      "talk.google.com",
-    port:      5222,
-  },
   mjpeg_url: 'http://your-url-here:port/path.cgi',
   smtp: {
     service: "Gmail",

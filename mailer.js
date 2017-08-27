@@ -35,7 +35,7 @@ function populateRecentImage(input) {
   });
 }
 
-setInterval(populateRecentImage, 1000);
+setInterval(populateRecentImage, 500);
 
 function send(msg, input) {
   var done   = input || function() {};
@@ -103,3 +103,4 @@ function send(msg, input) {
 }
 
 exports.send = send;
+exports.getRecentImage = getRecentImage;
