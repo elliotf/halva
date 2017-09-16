@@ -101,6 +101,9 @@ app.use(function(req, res, next) {
   if (!client_ip || ip_checker.isLocalAddress(client_ip)) {
     res.locals.from_lan = true;
   }
+  if (req.query.force_img) {
+    res.locals.from_lan = false;
+  }
 
   res.set({
     'Cache-Control': 'no-cache, no-store, must-revalidate',
