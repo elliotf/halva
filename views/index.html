@@ -81,7 +81,12 @@
         heartbeat();
       </script>
     {% else %}
-      <img width="100%" style="-webkit-user-select: none" src="/recent_image.jpg">
+      <script>
+        function refreshImage() {
+          document.garage_view.src = '/recent_image.jpg?ts=' + Date.now();
+        }
+      </script>
+      <img width="100%" name="garage_view" style="-webkit-user-select: none" src="/recent_image.jpg" onclick="refreshImage()">
     {% endif %}
   </body>
 </html>
