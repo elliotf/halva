@@ -118,6 +118,10 @@ app.get('/', function(req, res, next) {
   return res.render('index.html');
 });
 
+app.get('/toggle', function(req, res, next) {
+  return res.redirect('/');
+});
+
 app.post('/toggle', function(req, res, next) {
   var to_toggle = req.body.toggle;
   if (!to_toggle || !doors_by_name[to_toggle]) {
