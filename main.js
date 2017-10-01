@@ -2,38 +2,49 @@
 
 'use strict';
 
-var _          = require('lodash');
-var bodyParser = require('body-parser');
-var config     = require('config');
-var express    = require('express');
-var fs         = require('fs');
-var os         = require('os');
-var ip_checker = require('./ip-subnet-check');
-var nunjucks   = require('nunjucks');
-var GarageDoor = require('./door');
-var mailer     = require('./mailer');
-
-/*
-var log        = require('bunyan').createLogger({
-  name: 'halva',
-});
-var methods    = ['log', 'error'];
-var originals  = [];
-methods.forEach(function(meth) {
-  originals[meth] = console[meth];
-  console[meth]   = log[meth];
-});
-*/
+var _           = require('lodash');
+var bodyParser  = require('body-parser');
+var config      = require('config');
+var express     = require('express');
+var fs          = require('fs');
+var os          = require('os');
+var ip_checker  = require('./ip-subnet-check');
+var nunjucks    = require('nunjucks');
+var GarageDoor  = require('./door');
+var Broadcaster = require('./broadcaster');
+var mailer      = require('./mailer');
 
 var minute = 60*1000;
 
-var doors = config.doors.map(function(attrs) {
-  return new GarageDoor(attrs);
-});
+var broadcaster = new Broadcaster();
 
-var doors_by_name = {};
-doors.forEach(function(door) {
-  doors_by_name[door.name] = door;
+function getData(req_data) {
+  var door_data = doors.map(function(door) {
+    return {
+      name:      door.name,
+      status:    door.status,
+      is_closed: door.is_closed,
+    };
+  });
+  var data = {
+    doors:         door_data,
+    display_video: req_data.from_lan,
+    video_url:     config.mjpeg_url,
+  };
+
+  console.log('getData', data);
+
+  return data;
+}
+
+function onDoorChange() {
+  var data = getData({});
+
+  broadcaster.publish(data);
+}
+
+var doors = config.doors.map(function(attrs) {
+  return new GarageDoor(attrs, onDoorChange);
 });
 
 var alert_time = 0;
@@ -47,7 +58,6 @@ function ensureClosed() {
     }
 
     if (door.updated < oldest_open) {
-      console.log(`${door.name} is open`);
       oldest_open = door.updated;
     }
   });
@@ -77,9 +87,15 @@ function ensureClosed() {
 
 setInterval(ensureClosed, 10*1000);
 
+var doors_by_name = {};
+doors.forEach(function(door) {
+  doors_by_name[door.name] = door;
+});
+
 var app = express();
 
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 
 nunjucks.configure('views', {
   autoescape: true,
@@ -91,10 +107,6 @@ app.get('/heartbeat', function(req, res, next) {
 });
 
 app.use(function(req, res, next) {
-  res.locals.doors    = doors;
-  res.locals.messages = [];
-  res.locals.uptime   = process.uptime();
-  res.locals.memory   = JSON.stringify(process.memoryUsage(), null, 2);
   res.locals.from_lan = false;
   var client_ip = req.headers['x-real-ip'];
 
@@ -115,21 +127,31 @@ app.use(function(req, res, next) {
 });
 
 app.get('/', function(req, res, next) {
-  return res.render('index.html');
+  return res.sendFile(__dirname + '/index.html');
+});
+
+app.get('/data', function(req, res, next) {
+  var data = getData(res.locals);
+  var to_return = `
+    window.app_data = ${JSON.stringify(data)};
+  `;
+
+  res.setHeader('Content-type', 'application/json');
+  return res.send(to_return);
 });
 
 app.get('/toggle', function(req, res, next) {
   return res.redirect('/');
 });
 
+app.get('/updates', function(req, res, next) {
+  broadcaster.register(req, res);
+});
+
 app.post('/toggle', function(req, res, next) {
   var to_toggle = req.body.toggle;
   if (!to_toggle || !doors_by_name[to_toggle]) {
-    res.locals.messages.push({
-      text: 'Could not toggle ' + to_toggle,
-    });
-
-    return res.render('index.html');
+    return res.end();
   }
   var door = doors_by_name[to_toggle];
 
@@ -138,7 +160,7 @@ app.post('/toggle', function(req, res, next) {
       return next(err);
     }
 
-    return res.redirect('/');
+    return res.end();
   });
 });
 

@@ -1,22 +1,50 @@
 # halva
-My web-enabled garage door opener, like "Open, Sesame!" but tastier.
+My web-enabled garage door opener, like "Open, Sesame!" but [tastier](https://en.wikipedia.org/wiki/Halva "information about halva").
 
-This was a quick one that I put together to get around not having a remote for one of my garage doors.
-
-The basic ingredients:
-* Raspberry pi
-* Sainsmart relay
-* powerline networking adapter because the ground is frozen and I can't run ethernet and I don't believe in wireless
-* some magnetic reed switches from the local surplus store
-* cheap usb webcam or raspberry pi camera
-
-Features so far:
+# Features
 * multiple door support
-* opening/closing garage door from any browser
+* opening/closing garage door from any browser, mostly your phone
+* see live video stream of your garage, or images if connecting remotely
 * open/close status when it's too dark to see the webcam image
-* sms/email notification of door events (with picture from usb webcam)
+* sms/email notification of door events (with picture from camera)
 * automatic sms/email reminders if doors are left open
+* access from anywhere over ssl
 
-## TODO
+# TODO
 * favicon
-* ajax-ify open buttons to have door status auto-update
+* ajax-ify open buttons
+  * to open doors without reloading video feed
+  * to have door status auto-update
+* document the setup/installation
+* integration motion library to record video
+* send pictures of open door rather than always sending pictures of closed doors
+  * so that I can see who/what was going on when it was open
+  * when opening, immediately send notification, then send an image after delay (once open)
+  * when closing, immediately send image, then notification once closed
+
+# Installation and setup
+* hardware
+  * raspberry pi 3
+  * relays
+  * camera
+  * magnetic switches
+  * container
+  * network access (powerline / home av adapters)
+* node.js
+* mjpgstreamer
+* nginx
+* golang
+* oauth2_proxy
+  * compile
+  * config
+* supervisor
+  * halva
+  * mjpgstreamer
+  * oauth2_proxy
+* ssl via letsencrypt
+  * https://certbot.eff.org/all-instructions/#debian-9-stretch-nginx
+  * https://www.digitalocean.com/community/tutorials/how-to-secure-nginx-with-let-s-encrypt-on-ubuntu-16-04
+* recommendations
+  * static ip
+  * port forward
+  * dynamic dns client

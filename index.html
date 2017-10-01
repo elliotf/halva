@@ -1,0 +1,185 @@
+<html>
+  <head>
+    <title>Halva</title>
+    <script src="https://unpkg.com/vue@2.4.4/dist/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="/data"></script>
+    <meta content='width=device-width, initial-scale=1.0, user-scalable=1' name='viewport' />
+    <style>
+      body {
+        margin: 0;
+        text-align: center;
+        background-color: 0;
+        color:  #ccc;
+      }
+
+      p {
+        margin: 10px 0;
+      }
+
+      form {
+        width:  100%;
+        margin: 0;
+      }
+
+      button {
+        width:  128px;
+        height: 64px;
+        margin: 16px;
+        border: 0;
+        color:  #ccc;
+        background-color: #555;
+        outline: none;
+      }
+
+      /*
+      button.closed {
+        background-color: #242;
+      }
+      */
+
+      button.open {
+        background-color: #622;
+      }
+
+      button:active {
+        background-color: #999;
+        color:  #fff;
+      }
+
+      button.open:active {
+        background-color: #c77;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <door v-for="door in doors" v-bind="door" :key="door.name"></door>
+
+      <div v-if="display_video">
+        <img width="100%" style="-webkit-user-select: none" src="/video.mjpg">
+        <p @click="forcePhoto">Force to still image</p>
+      </div>
+      <div v-else>
+        <img width="100%" name="garage_view" style="-webkit-user-select: none" v-bind:src="img_src" @click="refreshImage">
+      </div>
+
+    </div>
+
+    <script>
+      Vue.component('door', {
+        template: '<button v-bind:class="classObject" @click="toggle">{{ name }} ({{ status }})</button>',
+        props:    ['name', 'status', 'is_closed'],
+        methods:  {
+          toggle: function() {
+            axios.post('/toggle', {
+              toggle: this.name,
+            }).then(function (data, status, request) {
+              console.log('data', data);
+            }).catch(function() {
+              console.log('err arguments', arguments);
+              // err handler here
+            });
+          },
+        },
+        computed: {
+          classObject: function() {
+            console.log('this', this);
+            var closed = !!this.is_closed;
+            console.log('this.is_closed', this.is_closed);
+            console.log('this.status', this.status);
+            return {
+              'closed': closed,
+              'open':   !closed,
+            };
+          },
+        },
+      });
+
+      var data = {
+        timestamp:     Date.now(),
+        display_video: false,
+        video_url:     '',
+      };
+      Object.keys(window.app_data).forEach(function(key) {
+        var val = window.app_data[key];
+        data[key] = val;
+      });
+
+      var app = new Vue({
+        el: '#app',
+        data: data,
+        created: function() {
+          this.setupStream();
+        },
+        computed: {
+          img_src: function() {
+            return "/recent_image.jpg?ts=" + this.timestamp;
+          },
+        },
+        methods: {
+          forcePhoto: function() {
+            this.display_video = false;
+          },
+          refreshImage: function() {
+            this.timestamp = Date.now();
+          },
+          setupStream: function() {
+            var source = new EventSource('/updates');
+
+            source.addEventListener('message', event => {
+              var data;
+              try {
+                console.log('this.doors', this.doors);
+                data = JSON.parse(event.data);
+
+                console.log('data', data);
+
+                this.doors = data.doors;
+              } catch(err) {
+                console.log('err, err.stack', err, err.stack);
+              }
+            });
+
+            source.addEventListener('error', event => {
+              console.log('error:', event);
+            });
+          }
+        },
+      });
+/*
+          function handleBeat(time) {
+            var el = document.getElementById('heartbeat');
+            el.innerHTML = time;
+          }
+          function heartbeat() {
+            var start   = Date.now();
+            var url     = '/heartbeat?ts=' + start;
+            var xhr     = new XMLHttpRequest();
+            var sleep   = 1000;
+            var timeout = sleep;
+            xhr.open('GET', url, true);
+            xhr.timeout = timeout;
+            xhr.addEventListener("load", function() {
+              var elapsed = Date.now() - start;
+              handleBeat(elapsed);
+              setTimeout(heartbeat, sleep);
+            });
+            xhr.addEventListener("error", function() {
+              handleBeat('error');
+              setTimeout(heartbeat, sleep);
+            });
+            xhr.addEventListener("timeout", function() {
+              handleBeat('timeout after ' + timeout);
+              setTimeout(heartbeat, 0);
+            });
+            xhr.send();
+          }
+          heartbeat();
+          function refreshImage() {
+            document.garage_view.src = '/recent_image.jpg?ts=' + Date.now();
+          }
+          */
+        </script>
+  </body>
+</html>

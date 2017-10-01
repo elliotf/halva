@@ -13,7 +13,7 @@
     "nunjucks": "^2.3.0",
     "onoff": "^1.1.5",
     "request": "^2.81.0",
-    "uuid": "^3.0.1"
+    "uuid": "^3.1.0"
   },
   "devDependencies": {
     "nodemon": "^1.8.1",

@@ -5,13 +5,15 @@ var config = require('config');
 var mailer = require('./mailer');
 var Gpio   = require('onoff').Gpio;
 
-function GarageDoor(attrs) {
-  this.name     = attrs.name;
-  this.button   = new Gpio(attrs.button_pin, 'high');
-  this.sensor   = new Gpio(attrs.sensor_pin, 'in', 'both');
-  this.status   = '';
-  this.updated  = Date.now();
-  var self      = this;
+function GarageDoor(attrs, onChange) {
+  this.name      = attrs.name;
+  this.button    = new Gpio(attrs.button_pin, 'high');
+  this.sensor    = new Gpio(attrs.sensor_pin, 'in', 'both');
+  this.status    = '';
+  this.is_closed = false;
+  this.updated   = Date.now();
+  this.onChange  = onChange;
+  var self       = this;
 
   this.sensor.watch(_.debounce(function(err, value) {
     if (err) {
@@ -55,13 +57,16 @@ GarageDoor.prototype.setStatus = function(value) {
     return;
   }
 
-  self.status  = new_state;
-  self.updated = Date.now();
+  self.status    = new_state;
+  self.is_closed = value;
+  self.updated   = Date.now();
 
   var state     = (value)
                 ? 'is now closed'
                 : 'has been opened';
   var message   = `Garage door "${self.name}" ${state}`;
+
+  this.onChange();
 
   if (!prior_state) {
     return;
