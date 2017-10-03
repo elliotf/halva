@@ -32,8 +32,6 @@ function getData(req_data) {
     video_url:     config.mjpeg_url,
   };
 
-  console.log('getData', data);
-
   return data;
 }
 

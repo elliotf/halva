@@ -75,19 +75,13 @@
             axios.post('/toggle', {
               toggle: this.name,
             }).then(function (data, status, request) {
-              console.log('data', data);
             }).catch(function() {
-              console.log('err arguments', arguments);
-              // err handler here
             });
           },
         },
         computed: {
           classObject: function() {
-            console.log('this', this);
             var closed = !!this.is_closed;
-            console.log('this.is_closed', this.is_closed);
-            console.log('this.status', this.status);
             return {
               'closed': closed,
               'open':   !closed,
@@ -130,10 +124,7 @@
             source.addEventListener('message', event => {
               var data;
               try {
-                console.log('this.doors', this.doors);
                 data = JSON.parse(event.data);
-
-                console.log('data', data);
 
                 this.doors = data.doors;
               } catch(err) {
