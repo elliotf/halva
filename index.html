@@ -5,6 +5,7 @@
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script src="/data"></script>
     <meta content='width=device-width, initial-scale=1.0, user-scalable=1' name='viewport' />
+    <meta name="theme-color" content="#555" />
     <style>
       body {
         margin: 0;
@@ -90,15 +91,21 @@
         },
       });
 
+      function merge(source, destination) {
+        var keys = Object.keys(source);
+        keys.forEach(function(key) {
+          destination[key] = source[key];
+        });
+      }
+
       var data = {
         timestamp:     Date.now(),
         display_video: false,
         video_url:     '',
+        doors:         [],
       };
-      Object.keys(window.app_data).forEach(function(key) {
-        var val = window.app_data[key];
-        data[key] = val;
-      });
+
+      merge(window.app_data, data);
 
       var app = new Vue({
         el: '#app',
@@ -118,6 +125,14 @@
           refreshImage: function() {
             this.timestamp = Date.now();
           },
+          refetch: function() {
+            axios.get('/data?format=json&ts=' + Date.now(), {
+              toggle: this.name,
+            }).then(function (res, status, request) {
+              merge(res.data, app.$data);
+            }).catch(function() {
+            });
+          },
           setupStream: function() {
             var source = new EventSource('/updates');
 
@@ -125,6 +140,8 @@
               var data;
               try {
                 data = JSON.parse(event.data);
+
+                this.timestamp = Date.now(); // trigger an image update if the door has closed.
 
                 this.doors = data.doors;
               } catch(err) {
@@ -138,6 +155,39 @@
           }
         },
       });
+
+      // if the user focuses away and then comes back, we should fetch fresh state from the server
+      var hidden, visibilityChange;
+      if (typeof document.hidden !== "undefined") { // Opera 12.10 and Firefox 18 and later support
+        hidden = "hidden";
+        visibilityChange = "visibilitychange";
+      } else if (typeof document.msHidden !== "undefined") {
+        hidden = "msHidden";
+        visibilityChange = "msvisibilitychange";
+      } else if (typeof document.webkitHidden !== "undefined") {
+        hidden = "webkitHidden";
+        visibilityChange = "webkitvisibilitychange";
+      }
+
+      (function() {
+        var focused = true;
+        function handleVisibilityChange(e) {
+          var new_status = (document[hidden]) ? false : true;
+
+          if (focused === false && new_status === true) {
+            app.refetch();
+          }
+
+          focused = new_status;
+        }
+
+        if (typeof document.addEventListener === "undefined") {
+          console.log("This demo requires a browser, such as Google Chrome or Firefox, that supports the Page Visibility API.");
+        } else {
+          // Handle page visibility change
+          document.addEventListener(visibilityChange, handleVisibilityChange, false);
+        }
+      }());
 /*
           function handleBeat(time) {
             var el = document.getElementById('heartbeat');

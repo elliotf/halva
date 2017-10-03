@@ -29,6 +29,7 @@ function getData(req_data) {
   var data = {
     doors:         door_data,
     display_video: req_data.from_lan,
+    timestamp:     Date.now(),
     video_url:     config.mjpeg_url,
   };
 
@@ -130,9 +131,10 @@ app.get('/', function(req, res, next) {
 
 app.get('/data', function(req, res, next) {
   var data = getData(res.locals);
-  var to_return = `
-    window.app_data = ${JSON.stringify(data)};
-  `;
+  var to_return = JSON.stringify(data);
+  if (req.query.format !== 'json') {
+    to_return = `window.app_data = ${to_return};`;
+  }
 
   res.setHeader('Content-type', 'application/json');
   return res.send(to_return);
