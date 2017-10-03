@@ -188,39 +188,6 @@
           document.addEventListener(visibilityChange, handleVisibilityChange, false);
         }
       }());
-/*
-          function handleBeat(time) {
-            var el = document.getElementById('heartbeat');
-            el.innerHTML = time;
-          }
-          function heartbeat() {
-            var start   = Date.now();
-            var url     = '/heartbeat?ts=' + start;
-            var xhr     = new XMLHttpRequest();
-            var sleep   = 1000;
-            var timeout = sleep;
-            xhr.open('GET', url, true);
-            xhr.timeout = timeout;
-            xhr.addEventListener("load", function() {
-              var elapsed = Date.now() - start;
-              handleBeat(elapsed);
-              setTimeout(heartbeat, sleep);
-            });
-            xhr.addEventListener("error", function() {
-              handleBeat('error');
-              setTimeout(heartbeat, sleep);
-            });
-            xhr.addEventListener("timeout", function() {
-              handleBeat('timeout after ' + timeout);
-              setTimeout(heartbeat, 0);
-            });
-            xhr.send();
-          }
-          heartbeat();
-          function refreshImage() {
-            document.garage_view.src = '/recent_image.jpg?ts=' + Date.now();
-          }
-          */
-        </script>
+    </script>
   </body>
 </html>
