@@ -13,6 +13,7 @@ var nunjucks    = require('nunjucks');
 var GarageDoor  = require('./door');
 var Broadcaster = require('./broadcaster');
 var mailer      = require('./mailer');
+var assets      = require('./webpack-assets');
 
 var minute = 60*1000;
 
@@ -26,6 +27,7 @@ function getData(req_data) {
       is_closed: door.is_closed,
     };
   });
+
   var data = {
     doors:         door_data,
     display_video: req_data.from_lan,
@@ -96,7 +98,7 @@ var app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-nunjucks.configure('views', {
+nunjucks.configure({
   autoescape: true,
   express:    app,
 });
@@ -107,26 +109,23 @@ app.get('/heartbeat', function(req, res, next) {
 
 app.use(function(req, res, next) {
   res.locals.from_lan = false;
+  res.locals.assets   = assets;
   var client_ip = req.headers['x-real-ip'];
 
-  if (!client_ip || ip_checker.isLocalAddress(client_ip)) {
-    res.locals.from_lan = true;
-  }
   if (req.query.force_img) {
     res.locals.from_lan = false;
+  } else {
+    if (!client_ip || ip_checker.isLocalAddress(client_ip)) {
+      res.locals.from_lan = true;
+    }
   }
-
-  res.set({
-    'Cache-Control': 'no-cache, no-store, must-revalidate',
-    Pragma:          'no-cache',
-    Expires:         0,
-  });
 
   return next();
 });
 
 app.get('/', function(req, res, next) {
-  return res.sendFile(__dirname + '/index.html');
+  res.locals.app_data = JSON.stringify(getData(res.locals), null, 2);
+  return res.render('index.html');
 });
 
 app.get('/data', function(req, res, next) {

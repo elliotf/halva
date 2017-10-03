@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "async": "^2.1.2",
+    "axios": "^0.16.2",
     "body-parser": "^1.15.0",
     "bunyan": "^1.8.10",
     "config": "^1.24.0",
@@ -13,10 +14,13 @@
     "nunjucks": "^2.3.0",
     "onoff": "^1.1.5",
     "request": "^2.81.0",
-    "uuid": "^3.1.0"
+    "uuid": "^3.1.0",
+    "vue": "^2.4.4"
   },
   "devDependencies": {
+    "assets-webpack-plugin": "^3.5.1",
     "nodemon": "^1.8.1",
+    "webpack": "^3.6.0",
     "yarn": "^0.27.5"
   }
 }
