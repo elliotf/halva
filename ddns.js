@@ -106,8 +106,8 @@ class Updater {
 
 (function() {
   const username = config.ddns.username;
-  const password = config.ddns.username;
-  const hostname = config.ddns.username;
+  const password = config.ddns.password;
+  const hostname = config.ddns.hostname;
 
   if (!username || !password || !hostname) {
     console.log("DDNS not configured, not enabling");
