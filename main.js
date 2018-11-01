@@ -14,6 +14,7 @@ var GarageDoor  = require('./door');
 var Broadcaster = require('./broadcaster');
 var mailer      = require('./mailer');
 var assets      = require('./webpack-assets');
+var ddns        = require('./ddns');
 
 var minute = 60*1000;
 

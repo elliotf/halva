@@ -33,4 +33,9 @@ module.exports = {
   },
   sms_recipients: [],
   email_recipients: [],
+  ddns: {
+    hostname: '',
+    username: '',
+    password: '',
+  },
 };
