@@ -3,7 +3,19 @@ var axios = require('axios/dist/axios.min.js');
 //var Vue = require('vue/dist/vue.min.js');
 //var axios = require('axios/dist/axios.min.js');
 
-console.log('Vue', Vue);
+Vue.component('light', {
+  template: '<button @click="trigger">Lights {{ title }}</button>',
+  props:    ['title'],
+  methods:  {
+    trigger: function() {
+      axios
+        .post(`/lights/${this.title}`)
+        .then(function (data, status, request) {
+        }).catch(function() {
+        });
+    },
+  },
+});
 
 Vue.component('door', {
   template: '<button v-bind:class="classObject" @click="toggle">{{ name }} ({{ status }})</button>',
@@ -38,17 +50,10 @@ function merge(source, destination) {
 var data = {
   timestamp:     Date.now(),
   display_video: false,
-  video_url:     '',
   doors:         [],
 };
 
-console.log('app_data', app_data);
-
 merge(app_data, data);
-
-console.log('data', data);
-
-console.log('hai?');
 
 var app = new Vue({
   el: '#app',
@@ -60,6 +65,9 @@ var app = new Vue({
     img_src: function() {
       return "/recent_image.jpg?ts=" + this.timestamp;
     },
+    last_refresh: function() {
+      return new Date(this.timestamp).toISOString();
+    },
   },
   methods: {
     forcePhoto: function() {
@@ -70,6 +78,7 @@ var app = new Vue({
     },
     refetch: function() {
       console.log('refetching');
+      this.timestamp = Date.now();
       axios.get('/data?format=json&ts=' + Date.now(), {
         toggle: this.name,
       }).then(function (res, status, request) {
@@ -100,8 +109,6 @@ var app = new Vue({
   },
 });
 
-console.log('app.doors', app.doors);
-
 // if the user focuses away and then comes back, we should fetch fresh state from the server
 (function() {
   var hidden, visibilityChange;
@@ -126,6 +133,11 @@ console.log('app.doors', app.doors);
 
     is_hidden = new_status;
   }
+
+  window.addEventListener("focus", function() {
+    app.refreshImage();
+  });
+  //window.addEventListener("blur", handleBrowserState.bind(context, false));
 
   if (typeof document.addEventListener === "undefined") {
     console.log("This demo requires a browser, such as Google Chrome or Firefox, that supports the Page Visibility API.");

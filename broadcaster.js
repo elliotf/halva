@@ -16,8 +16,8 @@ class Broadcaster {
     };
     this.connections.push(client);
 
-    console.log('client.id', client.id);
-    console.log('this.connections.length', this.connections.length);
+    //console.log('client.id', client.id);
+    //console.log('this.connections.length', this.connections.length);
 
     req.socket.setTimeout(0);
     req.on('close', function() {
@@ -25,9 +25,11 @@ class Broadcaster {
 
       this.connections.splice(i, 1);
 
-      console.log('removing', client.id);
-      console.log('this.connections.length', this.connections.length);
+      //console.log('removing', client.id);
+      //console.log('this.connections.length', this.connections.length);
     }.bind(this));
+
+    //console.log("New client");
 
     // Write headers needed for sse
     res.writeHead(200, {

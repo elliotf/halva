@@ -1,27 +1,35 @@
 #!/usr/bin/env node
 
-'use strict';
+const _ = require('lodash');
+const bodyParser = require('body-parser');
+const config = require('config');
+const express = require('express');
+const fs = require('fs');
+const os = require('os');
+const ip_checker = require('./ip-subnet-check');
+const nunjucks = require('nunjucks');
+const GarageDoor = require('./door');
+const Broadcaster = require('./broadcaster');
+const { Mailer } = require('./mailer');
+const assets = require('./webpack-assets');
+const ddns = require('./ddns');
+const camera = require('raspberry-pi-camera-native');
+const { ImageStream } = require('./image_stream');
+const sharp = require('sharp');
+const Gpio   = require('onoff').Gpio;
+const Bluebird = require('bluebird');
 
-var _           = require('lodash');
-var bodyParser  = require('body-parser');
-var config      = require('config');
-var express     = require('express');
-var fs          = require('fs');
-var os          = require('os');
-var ip_checker  = require('./ip-subnet-check');
-var nunjucks    = require('nunjucks');
-var GarageDoor  = require('./door');
-var Broadcaster = require('./broadcaster');
-var mailer      = require('./mailer');
-var assets      = require('./webpack-assets');
-var ddns        = require('./ddns');
+const minute = 60*1000;
+const broadcaster = new Broadcaster();
 
-var minute = 60*1000;
-
-var broadcaster = new Broadcaster();
-
+let previously_all_closed = true;
 function getData(req_data) {
+  let all_closed = true;
   var door_data = doors.map(function(door) {
+    if (!door.is_closed) {
+      all_closed = false;
+    }
+
     return {
       name:      door.name,
       status:    door.status,
@@ -30,11 +38,30 @@ function getData(req_data) {
   });
 
   var data = {
+    all_closed,
     doors:         door_data,
     display_video: req_data.from_lan,
     timestamp:     Date.now(),
     video_url:     config.mjpeg_url,
   };
+
+  if (all_closed && !previously_all_closed) {
+    // doors closed, so turn the lights off
+    press_light_button('off')
+      .catch((err) => {
+        console.log(err);
+      });
+  }
+
+  if (!all_closed && previously_all_closed) {
+    // doors opened, so turn the lights on
+    press_light_button('on')
+      .catch((err) => {
+        console.log(err);
+      });
+  }
+
+  previously_all_closed = all_closed;
 
   return data;
 }
@@ -42,14 +69,32 @@ function getData(req_data) {
 function onDoorChange() {
   var data = getData({});
 
+  if (!data.all_closed) {
+  }
+
   broadcaster.publish(data);
 }
 
+const image_stream = new ImageStream();
+let current_image;
+camera.on('frame', function(image_data) {
+  current_image = image_data;
+  image_stream.publish(image_data);
+});
+camera.start(config.camera_settings);
+
+mailer = new Mailer({
+  getImage: function() {
+    return current_image;
+  },
+});
+
 var doors = config.doors.map(function(attrs) {
+  attrs.mailer = mailer;
   return new GarageDoor(attrs, onDoorChange);
 });
 
-var alert_time = 0;
+var alert_time = Date.now() - 1; // alert on boot
 function ensureClosed() {
   var now         = Date.now();
   var oldest_open = now;
@@ -76,8 +121,8 @@ function ensureClosed() {
 
   var open_for = now - oldest_open;
 
-  // fibionacci snooze (10,10,20,30,50,80) with a limit
-  var snooze = Math.min(open_for, config.left_open_alert.max_snooze);
+  // ~fibionacci snooze (5,5,10,20,30,50,80) with a limit
+  var snooze = Math.min(Math.max(open_for, config.left_open_alert.alert_after_open), config.left_open_alert.max_snooze);
   alert_time = alert_time + snooze;
 
   var minutes_open   = (open_for / minute).toFixed(0);
@@ -111,7 +156,7 @@ app.get('/heartbeat', function(req, res, next) {
 app.use(function(req, res, next) {
   res.locals.from_lan = false;
   res.locals.assets   = assets;
-  var client_ip = req.headers['x-real-ip'];
+  var client_ip = req.headers['x-real-ip'] || req.headers['x-forwarded-for'];
 
   if (req.query.force_img) {
     res.locals.from_lan = false;
@@ -164,6 +209,31 @@ app.post('/toggle', function(req, res, next) {
   });
 });
 
+const lights = {
+  on: new Gpio(2, 'high'),
+  off: new Gpio(3, 'high'),
+};
+
+async function press_light_button(button_name) {
+  const button = lights[button_name];
+
+  if (!button) {
+    throw new Error(`No such light button: ${button_name}`);
+  }
+
+  await button.write(0);
+  await Bluebird.delay(config.pin_on_time);
+  await button.write(1);
+}
+
+app.post('/lights/:state', function(req, res, next) {
+  press_light_button(req.params.state)
+    .then(function() {
+      res.send('ok');
+    })
+    .catch(next);
+});
+
 app.get('/door/:door', function(req, res, next) {
   var door = doors_by_name[req.params.door];
 
@@ -182,19 +252,119 @@ app.get('/door/:door', function(req, res, next) {
   });
 });
 
-app.get('/recent_image.jpg', function(req, res, next) {
-  mailer.getRecentImage(function(err, img_data) {
-    if (err) {
-      return next(err);
+app.get('/video.mjpeg', function(req, res, next) {
+  const consumer = function(bytes) {
+    if (!bytes) {
+      return;
     }
 
-    res.type('jpeg');
-    res.end(img_data, 'binary');
+    const bytes_to_write = bytes.length;
+    //const MAX_BUFFER_AMOUNT = 1000000;
+    //const buffering_too_much = req.socket.writableLength > MAX_BUFFER_AMOUNT;
+    const MAX_FRAMES_TO_BUFFER = 1;
+    const MAX_BUFFER_AMOUNT = bytes_to_write * MAX_FRAMES_TO_BUFFER;
+    const buffering_too_much = req.socket.writableLength > MAX_BUFFER_AMOUNT;
+    if (buffering_too_much) {
+      // Node will keep buffering data to a client that can't consume quickly enough.
+      // Avoid blowing out memory by dropping frames.
+
+      return;
+    }
+
+    res.write('--' + boundary + '\r\n');
+    res.write('Content-Type: image/jpeg\r\n');
+    res.write(`Content-Length: ${bytes.length}\r\n`);
+    res.write('\r\n');
+    res.write(Buffer.from(bytes), 'binary');
+    res.write('\r\n');
+  };
+
+  req.on('close', function() {
+    //console.log('CLOSE');
+    image_stream.unsubscribe(consumer);
+  }.bind(this));
+  req.on('timeout', function() {
+    //console.log('TIMEOUT');
+    image_stream.unsubscribe(consumer);
+  }.bind(this));
+  req.on('disconnect', function() {
+    //console.log('DISCONNECT');
+    image_stream.unsubscribe(consumer);
+  }.bind(this));
+  req.on('abort', function() {
+    //console.log('ABORT');
+    image_stream.unsubscribe(consumer);
+  }.bind(this));
+
+  // Write headers
+  const boundary = '3b9014c1235e4e99b686136faf5ebaac';
+  res.removeHeader('Transfer-Encoding');
+  res.writeHead(200, {
+    Server: 'MJPG-streamer?',
+    'Content-Type':      `multipart/x-mixed-replace;boundary=${boundary}`,
+    'Cache-Control':     'no-cache',
+    'Connection':        'keep-alive',
+    'X-Accel-Buffering': 'no',
+  });
+
+  image_stream.subscribe(consumer);
+});
+
+app.get('/recent_image.jpg', function(req, res, next) {
+  const test = () => {
+    return !!current_image;
+  };
+
+  retry(10, 10, test, function(err, available) {
+    if (available) {
+      const {
+        width,
+        height,
+      } = req.query;
+
+      res.type('image/jpeg');
+
+      // future usage for motion detection.
+      // It's more CPU efficient to resize images than motion check larger images.
+      const no_resizing_for_now = true;
+
+      if (no_resizing_for_now || !width || !height) {
+        return res.send(current_image);
+      }
+
+      sharp(current_image)
+        .resize({
+          width: Number(width),
+          height: Number(height),
+          kernel: sharp.kernel.nearest,
+        })
+        .toBuffer()
+        .then(function(data) {
+          res.send(data);
+        }, next);
+    } else {
+      res.status(409);
+      return res.send('camera not available');
+    }
   });
 });
 
+app.use('/public', express.static('public'))
+
 var port = process.env.PORT || 3000;
 
-app.listen(port, '127.0.0.1', function(err) {
+app.listen(port, '0.0.0.0', function(err) {
   console.log('Listening on port 3000', new Date());
 });
+
+function retry(sleep, tries_left, test, done) {
+  if (!tries_left) {
+    return done(null, false);
+  }
+  if (test()) {
+    return done(null, true);
+  }
+  return setTimeout(function() {
+    retry(sleep*2, tries_left - 1, test, done);
+  }, sleep);
+}

@@ -2,13 +2,15 @@
 
 var _      = require('lodash');
 var config = require('config');
-var mailer = require('./mailer');
 var Gpio   = require('onoff').Gpio;
 
 function GarageDoor(attrs, onChange) {
+  this.mailer = attrs.mailer;
   this.name      = attrs.name;
   this.button    = new Gpio(attrs.button_pin, 'high');
-  this.sensor    = new Gpio(attrs.sensor_pin, 'in', 'both');
+  this.sensor    = new Gpio(attrs.sensor_pin, 'in', 'both', {
+    activeLow: true,
+  });
   this.status    = '';
   this.is_closed = false;
   this.updated   = Date.now();
@@ -72,7 +74,7 @@ GarageDoor.prototype.setStatus = function(value) {
     return;
   }
 
-  mailer.send(message);
+  this.mailer.send(message);
 };
 
 GarageDoor.prototype.getStatus = function(done) {

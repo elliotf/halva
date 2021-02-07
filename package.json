@@ -1,24 +1,27 @@
 {
   "dependencies": {
-    "async": "^2.1.2",
-    "axios": "^0.18.0",
-    "body-parser": "^1.15.0",
+    "axios": "^0.21.1",
+    "bluebird": "^3.7.2",
+    "body-parser": "^1.19.0",
     "config": "^1.24.0",
-    "express": "^4.13.4",
+    "express": "^4.17.1",
     "ip": "^1.1.5",
-    "lodash": "^4.17.2",
-    "moment": "^2.18.1",
-    "nodemailer": "^4.0.1",
-    "nunjucks": "^2.3.0",
-    "onoff": "^3.2.2",
-    "request": "^2.81.0",
-    "uuid": "^3.1.0",
-    "vue": "^2.4.4"
+    "lodash": "^4.17.20",
+    "moment": "^2.29.1",
+    "nodemailer": "^4.7.0",
+    "nunjucks": "^3.2.2",
+    "onoff": "^6.0.1",
+    "raspberry-pi-camera-native": "0.0.0",
+    "request": "^2.88.2",
+    "sharp": "^0.27.0",
+    "uuid": "^8.3.2",
+    "vue": "^2.6.12"
   },
   "devDependencies": {
-    "assets-webpack-plugin": "^3.5.1",
-    "nodemon": "^1.8.1",
-    "webpack": "^4.23.1",
+    "assets-webpack-plugin": "^3.9.12",
+    "nodemon": "^2.0.7",
+    "webpack": "^4.46.0",
+    "webpack-cli": "^4.4.0",
     "yarn": "^0.27.5"
   }
 }

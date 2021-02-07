@@ -50,9 +50,11 @@
   <body>
     <div id="app">
       <door v-for="door in doors" v-bind="door" :key="door.name"></door>
+      <light key="light_on" title="on"></light>
+      <light key="light_off" title="off"></light>
 
       <div v-if="display_video">
-        <img width="100%" style="-webkit-user-select: none" src="/video.mjpg">
+        <img width="100%" style="-webkit-user-select: none" src="/video.mjpeg">
         <p @click="forcePhoto">Force to still image</p>
       </div>
       <div v-else>
