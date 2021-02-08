@@ -1,0 +1,18 @@
+# Contents of /etc/systemd/system/myservice.service
+[Unit]
+Description=halva
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+#Environment=NODE_ENV=production
+#Environment=ENV=production
+WorkingDirectory=/home/pi/halva
+ExecStart=/home/pi/bin/node /home/pi/halva/main.js
+StandardOutput=kmsg
+StandardError=kmsg
+SyslogIdentifier=halva
+
+[Install]
+WantedBy=multi-user.target

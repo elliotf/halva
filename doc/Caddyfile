@@ -1,0 +1,68 @@
+{
+  http_port     80
+  https_port    443
+}
+
+auth.example.com {
+  route * {
+    auth_portal {
+      cookie_domain example.com
+      path /auth
+      backends {
+        google_oauth2_backend {
+          method oauth2
+          realm google
+          provider google
+          client_id <id here>.apps.googleusercontent.com
+          client_secret <secret here>
+          scopes openid email profile
+
+          user user@example.com add role trusted
+          user other-user@example.com add role trusted
+        }
+      }
+      jwt {
+        # unfortunately, the cookies only last for the session, but hopefully
+        # https://github.com/greenpau/caddy-auth-portal/pull/91
+        # will get merged soon and we can log in less
+        # tokens last for a week
+        token_lifetime 604800
+        token_name atok
+        token_secret <token secret here>
+      }
+      ui {
+        links {
+          "Halva, the garage door opener" https://garage.example.com
+        }
+      }
+    }
+  }
+}
+
+garage.example.com {
+  route * {
+    jwt {
+      primary yes
+      trusted_tokens {
+        static_secret {
+          token_name atok
+          token_secret <secret here>
+        }
+      }
+      auth_url https://auth.example.com/auth?redirect_url=https://garage.example.com
+      allow roles trusted
+    }
+    reverse_proxy http://127.0.0.1:3000 {
+      flush_interval -1
+    }
+  }
+}
+
+otherservice.example.com {
+  route * {
+    jwt
+  }
+  reverse_proxy http://internal-host.lan {
+    flush_interval -1
+  }
+}
