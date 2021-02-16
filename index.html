@@ -4,63 +4,12 @@
     <script>
       var app_data = {{ app_data|safe }};
     </script>
+    <link href="{{ assets.main.css }}" rel="stylesheet">
     <meta content='width=device-width, initial-scale=1.0, user-scalable=1' name='viewport' />
     <meta name="theme-color" content="#555" />
-    <style>
-      body {
-        margin: 0;
-        text-align: center;
-        background-color: 0;
-        color:  #ccc;
-      }
-
-      p {
-        margin: 10px 0;
-      }
-
-      form {
-        width:  100%;
-        margin: 0;
-      }
-
-      button {
-        width:  128px;
-        height: 64px;
-        margin: 16px;
-        border: 0;
-        color:  #ccc;
-        background-color: #555;
-        outline: none;
-      }
-
-      button.open {
-        background-color: #622;
-      }
-
-      button:active {
-        background-color: #999;
-        color:  #fff;
-      }
-
-      button.open:active {
-        background-color: #c77;
-      }
-    </style>
   </head>
   <body>
-    <div id="app">
-      <door v-for="door in doors" v-bind="door" :key="door.name"></door>
-      <light key="light_on" title="on"></light>
-      <light key="light_off" title="off"></light>
-
-      <div v-if="display_video">
-        <img width="100%" style="-webkit-user-select: none" src="/video.mjpeg">
-        <p @click="forcePhoto">Force to still image</p>
-      </div>
-      <div v-else>
-        <img width="100%" name="garage_view" style="-webkit-user-select: none" v-bind:src="img_src" @click="refreshImage">
-      </div>
-    </div>
+    <div id="app"></div>
     <script src="{{ assets.main.js }}"></script>
   </body>
 </html>

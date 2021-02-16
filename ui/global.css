@@ -1,0 +1,46 @@
+body {
+  margin: 0;
+  text-align: center;
+  background-color: #000;
+  color:  #ccc;
+}
+
+p {
+  margin: 10px 0;
+}
+
+form {
+  width:  100%;
+  margin: 0;
+}
+
+button {
+  width: 128px;
+  height: 64px;
+  margin: 16px 8px;
+  border: 0;
+  color: #ccc;
+  background-color: #555;
+  outline: none;
+}
+
+button.open {
+  background-color: #622;
+}
+
+button:active {
+  background-color: #999;
+  color:  #fff;
+}
+
+button.open:active {
+  background-color: #c77;
+}
+
+img {
+  width: 100%;
+}
+
+.force-image {
+  cursor: pointer;
+}
