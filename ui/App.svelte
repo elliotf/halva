@@ -96,7 +96,7 @@
     <img alt="live video feed" src="/video.mjpeg?ts={ video_timestamp }">
     <p class="force-image" on:click={ forceImage }>Force to still image</p>
   {:else}
-    <img on:click={ refreshImage } alt="live video feed" src="http://garage.lan:3000/recent_image.jpg?ts={ image_timestamp }">
+    <img on:click={ refreshImage } alt="live video feed" src="/recent_image.jpg?ts={ image_timestamp }">
   {/if}
 </main>
 
