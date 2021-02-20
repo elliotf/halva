@@ -353,7 +353,10 @@ app.get('/recent_image.jpg', function(req, res, next) {
   });
 });
 
-app.use('/public', express.static('public'))
+app.use('/public', express.static('public', {
+  immutable: true,
+  maxAge: '1y',
+}))
 
 var port = process.env.PORT || 3000;
 
