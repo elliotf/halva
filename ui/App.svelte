@@ -85,12 +85,7 @@
 </script>
 
 <main>
-  {#each doors as door, index (door.name)}
-    <Door {...door}/>
-  {/each}
-
-  <Light title='on' />
-  <Light title='off' />
+  {#each doors as door, index (door.name)}<Door {...door}/>{/each}<Light title='on' /><Light title='off' />
 
   {#if display_video}
     <img alt="live video feed" src="/video.mjpeg?ts={ video_timestamp }">
