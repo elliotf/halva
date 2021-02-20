@@ -224,6 +224,10 @@ async function press_light_button(button_name) {
   await button.write(0);
   await Bluebird.delay(config.pin_on_time);
   await button.write(1);
+
+  await Bluebird.delay(200);
+
+  onDoorChange();
 }
 
 app.post('/lights/:state', function(req, res, next) {
