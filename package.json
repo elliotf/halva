@@ -7,7 +7,7 @@
     "express": "^4.17.1",
     "ip": "^1.1.5",
     "lodash": "^4.17.20",
-    "moment": "^2.29.1",
+    "moment": "^2.29.4",
     "nodemailer": "^4.7.0",
     "nunjucks": "^3.2.2",
     "onoff": "^6.0.1",
